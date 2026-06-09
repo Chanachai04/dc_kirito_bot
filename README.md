@@ -45,6 +45,27 @@
 
 ---
 
+## ⚙️ การตั้งค่าไฟล์ .env
+
+คุณจำเป็นต้องสร้างไฟล์ `.env` ไว้ในโฟลเดอร์เดียวกับโปรเจกต์ (หรือโฟลเดอร์เดียวกับ `.exe`) โดยต้องมีตัวแปรดังต่อไปนี้:
+
+```env
+DISCORD_TOKEN=โทเคนของบอท_Discord
+CLIENT_ID=ไอดีของบอท_Discord
+GUILD_ID=ไอดีของเซิร์ฟเวอร์_Discord_ที่คุณต้องการใช้งาน
+SPREADSHEET_ID=ไอดีของ_Google_Sheets
+KEY_ACCESS=รหัสผ่านสำหรับเข้าใช้งานบอทตอนรัน
+```
+
+**คำอธิบายแต่ละตัวแปร:**
+- `DISCORD_TOKEN`: โทเคนของบอท (หาได้จากหน้า Bot ใน Discord Developer Portal)
+- `CLIENT_ID`: Application ID ของบอท (หาได้จากหน้า General Information ใน Discord Developer Portal)
+- `GUILD_ID`: Server ID ของเซิร์ฟเวอร์ Discord ที่คุณต้องการให้บอทรองรับคำสั่ง
+- `SPREADSHEET_ID`: ID ของ Google Sheets (ดูได้จาก URL ของไฟล์ Sheets เช่น `https://docs.google.com/spreadsheets/d/ที่นี่คือไอดี/edit`)
+- `KEY_ACCESS`: รหัสผ่านที่คุณตั้งขึ้นเอง เพื่อใช้กรอกยืนยันตัวตนตอนเปิดรันไฟล์ `kirito.exe`
+
+---
+
 ## 🔑 วิธีการขอไฟล์ credentials.json (Google Sheets API)
 
 บอทตัวนี้จำเป็นต้องเชื่อมต่อกับ Google Sheets จึงต้องใช้ไฟล์ `credentials.json` จาก Google Cloud Platform เพื่อยืนยันตัวตน โดยมีขั้นตอนดังนี้:
