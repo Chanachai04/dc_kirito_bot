@@ -45,6 +45,24 @@
 
 ---
 
+## 🔑 วิธีการขอไฟล์ credentials.json (Google Sheets API)
+
+บอทตัวนี้จำเป็นต้องเชื่อมต่อกับ Google Sheets จึงต้องใช้ไฟล์ `credentials.json` จาก Google Cloud Platform เพื่อยืนยันตัวตน โดยมีขั้นตอนดังนี้:
+
+1. ไปที่เว็บไซต์ **[Google Cloud Console](https://console.cloud.google.com/)**
+2. สร้างโปรเจกต์ใหม่ (Create Project)
+3. ไปที่เมนู **APIs & Services** > **Library** แล้วค้นหาคำว่า **Google Sheets API** จากนั้นกด **Enable**
+4. ไปที่เมนู **APIs & Services** > **Credentials**
+5. กดปุ่ม **+ CREATE CREDENTIALS** ด้านบน แล้วเลือก **Service account**
+6. กรอกชื่อ Service account (เช่น `kirito-bot`) แล้วกด Create and Continue ไปจนเสร็จสิ้น
+7. เมื่อได้ Service account มาแล้ว ให้คลิกเข้าไปที่อีเมลของ Service account นั้น (หน้าตาจะคล้ายๆ `ชื่อ@ชื่อโปรเจกต์.iam.gserviceaccount.com`)
+8. ไปที่แท็บ **KEYS** > กด **ADD KEY** > **Create new key**
+9. เลือกประเภทเป็น **JSON** แล้วกด Create ระบบจะทำการดาวน์โหลดไฟล์ลงเครื่องของคุณ
+10. **เปลี่ยนชื่อไฟล์**ที่ดาวน์โหลดมาเป็น `credentials.json` แล้วนำไปวางไว้ในโฟลเดอร์เดียวกับบอท (`kirito.exe`)
+11. **ข้อควรระวังสำคัญ:** อย่าลืมเข้าไปที่ Google Sheets ของคุณ กดปุ่ม "แชร์" และนำอีเมลของ Service account (จากข้อ 7) ไปเพิ่มสิทธิ์ให้เป็น **Editor (ผู้แก้ไข)** เพื่อให้บอทสามารถเขียนข้อมูลลงไปได้
+
+---
+
 ## 🚀 วิธีการเปิดใช้งาน (รันบอท)
 
 1. ดับเบิลคลิกที่ไฟล์ **`kirito.exe`**
