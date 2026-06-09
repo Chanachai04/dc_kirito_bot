@@ -1,20 +1,15 @@
-// Fix for pkg node18 fetch "Invalid host defined options" bug
 const nodeFetch = require("node-fetch");
 global.fetch = nodeFetch;
 global.Headers = nodeFetch.Headers;
 global.Request = nodeFetch.Request;
 global.Response = nodeFetch.Response;
 
-// Polyfill ReadableStream & FormData for Node 16 pkg target (undici requires it)
 const { ReadableStream } = require("node:stream/web");
 global.ReadableStream = ReadableStream;
 try {
   global.FormData = require("undici").FormData;
-} catch (e) {
-  // Ignore if not found
-}
+} catch (e) {}
 
-// Polyfill DOMException and Blob for Node 16 pkg target (gaxios requires it for error handling)
 if (typeof global.DOMException === "undefined") {
   global.DOMException = class DOMException extends Error {
     constructor(message, name) {
