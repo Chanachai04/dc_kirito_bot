@@ -24,6 +24,7 @@ async function handleMusicCommand(message, command, args) {
   let serverQueue = queueMap.get(guildId);
 
   if (command === "play") {
+    await message.deferReply();
     await playCommand(message, args, voiceChannel, serverQueue);
   } else if (command === "stop") {
     await stopCommand(message, serverQueue);

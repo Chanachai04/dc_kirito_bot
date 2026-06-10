@@ -17,7 +17,8 @@
     ],
     "assets": [
       ".env",
-      "credentials.json"
+      "credentials.json",
+      "node_modules/opusscript/build/opusscript_native_wasm.wasm"
     ]
   },
   "keywords": [],

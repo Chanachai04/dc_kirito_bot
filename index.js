@@ -147,6 +147,15 @@ client.on("interactionCreate", async (interaction) => {
       await aiFeature.handleSearchCommand(interaction);
     } else if (interaction.commandName === "image") {
       await aiFeature.handleImageCommand(interaction);
+    } else if (["play", "stop", "next", "list", "volume"].includes(interaction.commandName)) {
+      const command = interaction.commandName;
+      let args = [];
+      if (command === "play") args = [interaction.options.getString("query")];
+      if (command === "volume") {
+        const lvl = interaction.options.getInteger("level");
+        if (lvl) args = [lvl.toString()];
+      }
+      await handleMusicCommand(interaction, command, args);
     }
   } else if (interaction.isButton() || interaction.isModalSubmit()) {
     await handleMusicInteraction(interaction);
@@ -161,13 +170,6 @@ client.on("messageCreate", async (message) => {
 
   const prefix = "!";
   if (!message.content.startsWith(prefix)) return;
-
-  const args = message.content.slice(prefix.length).trim().split(/ +/);
-  const command = args.shift().toLowerCase();
-
-  if (["play", "stop", "next", "list", "volume"].includes(command)) {
-    await handleMusicCommand(message, command, args);
-  }
 });
 
 // ป้องกันระบบ Process หลักดับกลางคันเมื่อเกิด Error ที่คาดไม่ถึง

@@ -59,6 +59,35 @@ const commands = [
         .setDescription("คำอธิบายรูปภาพที่ต้องการ")
         .setRequired(true),
     ),
+  new SlashCommandBuilder()
+    .setName("play")
+    .setDescription("เล่นเพลงจาก YouTube")
+    .addStringOption((option) =>
+      option
+        .setName("query")
+        .setDescription("ชื่อเพลงหรือลิงก์ YouTube")
+        .setRequired(true),
+    ),
+  new SlashCommandBuilder()
+    .setName("volume")
+    .setDescription("ปรับระดับเสียงเพลง (1-100)")
+    .addIntegerOption((option) =>
+      option
+        .setName("level")
+        .setDescription("ระดับเสียงที่ต้องการ")
+        .setMinValue(1)
+        .setMaxValue(100)
+        .setRequired(false),
+    ),
+  new SlashCommandBuilder()
+    .setName("list")
+    .setDescription("ดูรายชื่อเพลงที่อยู่ในคิว"),
+  new SlashCommandBuilder()
+    .setName("next")
+    .setDescription("ข้ามไปเล่นเพลงถัดไป"),
+  new SlashCommandBuilder()
+    .setName("stop")
+    .setDescription("หยุดเพลง ล้างคิว และเตะบอทออกจากห้อง"),
 ].map((command) => command.toJSON());
 
 module.exports = commands;

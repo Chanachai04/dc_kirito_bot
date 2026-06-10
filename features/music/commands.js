@@ -36,29 +36,42 @@ async function playCommand(
   try {
     let type = play.yt_validate(query);
 
-    // ป้องกันปัญหา play-dl แครชเมื่อเจอ YouTube Mix (list=RD...)
-    if (type === "playlist" && query.includes("list=RD")) {
-      type = "video";
+    // เปิดใช้งาน YouTube Mix (list=RD...) เพื่อให้ yt-dlp จัดการดึงข้อมูลเพลย์ลิสต์
+    if (query.includes("list=RD") || query.includes("list=PL")) {
+      type = "playlist";
     }
 
     if (type === "playlist") {
       const util = require("util");
       const { exec } = require("child_process");
       const execPromise = util.promisify(exec);
-      
+
       try {
-        const { stdout } = await execPromise(`.\\yt-dlp.exe -J --flat-playlist --playlist-end 100 "${query}"`, { maxBuffer: 1024 * 1024 * 10 });
+        const playlistEnd = query.includes("list=RD") ? 20 : 40;
+        const { stdout } = await execPromise(
+          `.\\yt-dlp.exe -J --flat-playlist --playlist-end ${playlistEnd} "${query}"`,
+          { maxBuffer: 1024 * 1024 * 10 },
+        );
         const parsed = JSON.parse(stdout);
         if (parsed && parsed.entries) {
-          const videos = parsed.entries.filter(v => v.title && v.url && !v.title.includes("[Private video]") && !v.title.includes("[Deleted video]"));
+          const videos = parsed.entries.filter(
+            (v) =>
+              v.title &&
+              v.url &&
+              !v.title.includes("[Private video]") &&
+              !v.title.includes("[Deleted video]"),
+          );
           songInfos = videos.map((v) => ({
             title: v.title,
             url: v.url,
-            thumbnail: v.thumbnails && v.thumbnails.length > 0 ? v.thumbnails[0].url : "",
-            duration: v.duration || 0
+            thumbnail:
+              v.thumbnails && v.thumbnails.length > 0
+                ? v.thumbnails[0].url
+                : "",
+            duration: v.duration || 0,
           }));
         }
-        
+
         if (songInfos.length === 0) {
           type = "video"; // Fallback to single video if playlist parsing failed or is empty
         }
@@ -97,6 +110,22 @@ async function playCommand(
     return messageOrInteraction.editReply
       ? messageOrInteraction.editReply(replyText)
       : messageOrInteraction.reply(replyText);
+  }
+
+  const currentQueueSize = serverQueue ? serverQueue.songs.length : 0;
+  const availableSpace = 60 - currentQueueSize;
+
+  if (availableSpace <= 0) {
+    const replyText = "❌ คิวเพลงเต็มแล้วครับ (เก็บได้สูงสุด 60 เพลง)";
+    return messageOrInteraction.editReply
+      ? messageOrInteraction.editReply(replyText)
+      : messageOrInteraction.reply(replyText);
+  }
+
+  let truncated = false;
+  if (songInfos.length > availableSpace) {
+    songInfos = songInfos.slice(0, availableSpace);
+    truncated = true;
   }
 
   if (!serverQueue) {
@@ -147,12 +176,20 @@ async function playCommand(
 
       await playNextSong(guildId);
 
-      if ((typeof messageOrInteraction.isButton === "function" || typeof messageOrInteraction.isModalSubmit === "function") && typeof messageOrInteraction.followUp === "function") {
-        const replyText =
+      if (
+        (typeof messageOrInteraction.isButton === "function" ||
+          typeof messageOrInteraction.isModalSubmit === "function" || typeof messageOrInteraction.isChatInputCommand === "function") &&
+        typeof messageOrInteraction.followUp === "function"
+      ) {
+        let replyText =
           songInfos.length === 1
             ? `🎵 นำ **${songInfos[0].title}** เข้าคิวและเริ่มเล่นแล้วครับ!`
             : `🎵 นำ **${songInfos.length} เพลง** เข้าคิวและเริ่มเล่นแล้วครับ!`;
-        await messageOrInteraction.followUp({ content: replyText, ephemeral: true }).catch(console.error);
+        if (truncated) replyText += "\n*(คำเตือน: ตัดเพลงบางส่วนออกเพราะคิวเต็ม 60 เพลงแล้ว)*";
+
+        await messageOrInteraction
+          .followUp({ content: replyText, ephemeral: true })
+          .catch(console.error);
       }
     } catch (error) {
       console.error(error);
@@ -166,12 +203,13 @@ async function playCommand(
   } else {
     serverQueue.songs.push(...songInfos);
 
-    if (!messageOrInteraction.isButton && !messageOrInteraction.isModalSubmit) {
-      const replyText =
-        songInfos.length === 1
-          ? `🎵 เพิ่ม **${songInfos[0].title}** ลงในคิวแล้วครับ!`
-          : `🎵 เพิ่ม **${songInfos.length} เพลง** ลงในคิวแล้วครับ!`;
+    let replyText =
+      songInfos.length === 1
+        ? `🎵 เพิ่ม **${songInfos[0].title}** ลงในคิวแล้วครับ!`
+        : `🎵 เพิ่ม **${songInfos.length} เพลง** ลงในคิวแล้วครับ!`;
+    if (truncated) replyText += "\n*(คำเตือน: ตัดเพลงบางส่วนออกเพราะคิวเต็ม 60 เพลงแล้ว)*";
 
+    if (!messageOrInteraction.isButton && !messageOrInteraction.isModalSubmit) {
       if (messageOrInteraction.editReply) {
         return messageOrInteraction.editReply(replyText);
       } else {
@@ -180,11 +218,12 @@ async function playCommand(
     } else {
       const embed = generateMusicEmbed(serverQueue);
       const components = generateMusicComponents(serverQueue);
-      
-      const replyText =
+
+      let replyText =
         songInfos.length === 1
           ? `🎵 เพิ่ม **${songInfos[0].title}** ลงในคิวแล้วครับ!`
           : `🎵 เพิ่ม **${songInfos.length} เพลง** ลงในคิวแล้วครับ!`;
+      if (truncated) replyText += "\n*(คำเตือน: ตัดเพลงบางส่วนออกเพราะคิวเต็ม 60 เพลงแล้ว)*";
 
       if (typeof messageOrInteraction.editReply === "function") {
         await messageOrInteraction.editReply({
@@ -193,7 +232,9 @@ async function playCommand(
           components: components,
         });
         if (typeof messageOrInteraction.followUp === "function") {
-          await messageOrInteraction.followUp({ content: replyText, ephemeral: true }).catch(console.error);
+          await messageOrInteraction
+            .followUp({ content: replyText, ephemeral: true })
+            .catch(console.error);
         }
       }
     }
@@ -250,24 +291,41 @@ async function listCommand(messageOrInteraction, serverQueue) {
       ? messageOrInteraction.reply({ content: text, ephemeral: true })
       : messageOrInteraction.reply(text);
   }
-  const queueString = serverQueue.songs
-    .map((song, index) => {
-      const dur = formatTime(song.duration || 0);
-      if (index === 0) return `**1.** ${song.title} [${dur}] *(กำลังเล่น 🎶)*`;
-      return `**${index + 1}.** ${song.title} [${dur}]`;
-    })
-    .join("\n");
 
-  const limitedString =
-    queueString.length > 1900
-      ? queueString.substring(0, 1900) + "\n...และอื่นๆ"
-      : queueString;
-  const replyText = `📋 **คิวเพลงปัจจุบัน:**\n${limitedString}`;
+  let column1 = "";
+  let column2 = "";
+
+  const half = Math.ceil(serverQueue.songs.length / 2);
+  
+  serverQueue.songs.forEach((song, index) => {
+    const dur = formatTime(song.duration || 0);
+    const isPlaying = index === 0 ? " *(กำลังเล่น 🎶)*" : "";
+    let line = `**${index + 1}.** ${song.title.length > 30 ? song.title.substring(0, 30) + "..." : song.title} [${dur}]${isPlaying}\n`;
+    
+    if (index < half) {
+      column1 += line;
+    } else {
+      column2 += line;
+    }
+  });
+
+  if (!column1) column1 = "-";
+  if (!column2) column2 = "-";
+
+  const { EmbedBuilder } = require("discord.js");
+  const embed = new EmbedBuilder()
+    .setColor("#FF0000")
+    .setTitle("📋 คิวเพลงปัจจุบัน")
+    .addFields(
+      { name: "คอลัมน์ 1", value: column1, inline: true },
+      { name: "คอลัมน์ 2", value: column2, inline: true }
+    )
+    .setFooter({ text: `ทั้งหมด ${serverQueue.songs.length} เพลง` });
 
   if (messageOrInteraction.isButton) {
-    return messageOrInteraction.reply({ content: replyText, ephemeral: true });
+    return messageOrInteraction.reply({ embeds: [embed], ephemeral: true });
   } else {
-    return messageOrInteraction.reply(replyText);
+    return messageOrInteraction.reply({ embeds: [embed] });
   }
 }
 
