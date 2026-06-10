@@ -54,8 +54,10 @@ async function musicFeature(message, command, args) {
         const videos = await playlist.all_videos();
         // จำกัดสูงสุด 20 เพลง
         const limitedVideos = videos.slice(0, 20);
-        songInfos = limitedVideos.map(v => ({ title: v.title, url: v.url }));
-        message.channel.send(`📥 ตรวจพบ Playlist! กำลังเพิ่ม **${songInfos.length} เพลง** ลงในคิว...`);
+        songInfos = limitedVideos.map((v) => ({ title: v.title, url: v.url }));
+        message.channel.send(
+          `📥 ตรวจพบ Playlist! กำลังเพิ่ม **${songInfos.length} เพลง** ลงในคิว...`,
+        );
       } else {
         const searchResults = await play.search(query, { limit: 1 });
         if (!searchResults || searchResults.length === 0) {
@@ -121,9 +123,13 @@ async function musicFeature(message, command, args) {
     } else {
       serverQueue.songs.push(...songInfos);
       if (songInfos.length === 1) {
-        return message.reply(`🎵 เพิ่ม **${songInfos[0].title}** ลงในคิวแล้วครับ!`);
+        return message.reply(
+          `🎵 เพิ่ม **${songInfos[0].title}** ลงในคิวแล้วครับ!`,
+        );
       } else {
-        return message.reply(`🎵 เพิ่ม **${songInfos.length} เพลง** ลงในคิวแล้วครับ!`);
+        return message.reply(
+          `🎵 เพิ่ม **${songInfos.length} เพลง** ลงในคิวแล้วครับ!`,
+        );
       }
     }
   } else if (command === "stop") {
@@ -160,7 +166,9 @@ async function musicFeature(message, command, args) {
       return message.reply("❌ ไม่มีเพลงที่กำลังเล่นอยู่ครับ");
     }
     if (args.length === 0) {
-      return message.reply(`🔊 ระดับเสียงปัจจุบันคือ **${serverQueue.volume}%**`);
+      return message.reply(
+        `🔊 ระดับเสียงปัจจุบันคือ **${serverQueue.volume}%**`,
+      );
     }
     const vol = parseInt(args[0]);
     if (isNaN(vol) || vol < 1 || vol > 100) {
@@ -188,16 +196,22 @@ async function playNextSong(guildId) {
 
   const song = serverQueue.songs[0];
   try {
-    const { spawn } = require('child_process');
-    const fs = require('fs');
+    const { spawn } = require("child_process");
+    const fs = require("fs");
     let resource;
 
     // ใช้ yt-dlp.exe เพื่อดึงสตรีมเสียงโดยตรง (ป้องกันการถูกบล็อคได้ดีที่สุด)
-    if (fs.existsSync('./yt-dlp.exe')) {
-      const ytdlp = spawn('.\\yt-dlp.exe', ['-f', 'bestaudio', '-o', '-', song.url]);
-      
-      ytdlp.on('error', (err) => console.error("yt-dlp spawn error:", err));
-      
+    if (fs.existsSync("./yt-dlp.exe")) {
+      const ytdlp = spawn(".\\yt-dlp.exe", [
+        "-f",
+        "bestaudio",
+        "-o",
+        "-",
+        song.url,
+      ]);
+
+      ytdlp.on("error", (err) => console.error("yt-dlp spawn error:", err));
+
       resource = createAudioResource(ytdlp.stdout, { inlineVolume: true });
     } else {
       // กรณีไม่พบ yt-dlp.exe ให้ถอยกลับไปใช้ play-dl (อาจจะโดนบล็อค)

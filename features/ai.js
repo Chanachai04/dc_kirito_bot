@@ -27,7 +27,9 @@ async function handleChatCommand(interaction) {
     await interaction.editReply(limitDiscordText(responseText));
   } catch (error) {
     console.error("AI Chat Error:", error);
-    await interaction.editReply("❌ ขออภัย เกิดข้อผิดพลาดในการเชื่อมต่อกับ AI ครับ");
+    await interaction.editReply(
+      "❌ ขออภัย เกิดข้อผิดพลาดในการเชื่อมต่อกับ AI ครับ",
+    );
   }
 }
 
@@ -39,15 +41,16 @@ async function handleSearchCommand(interaction) {
   try {
     const query = interaction.options.getString("query");
     const genAI = getGenAI();
-    
+
     // เปิดการตั้งค่า Google Search Grounding
-    const model = genAI.getGenerativeModel({ 
+    const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
-      tools: [{ googleSearch: {} }]
+      tools: [{ googleSearch: {} }],
     });
 
-    const prompt = `กรุณาค้นหาข้อมูลเกี่ยวกับสิ่งต่อไปนี้: "${query}"\n` +
-                   `จากนั้นให้สรุปเนื้อหาเป็นภาษาไทยให้อ่านเข้าใจง่าย พร้อมทั้งระบุแหล่งที่มาหรือลิงก์อ้างอิงของข้อมูลด้วยครับ`;
+    const prompt =
+      `กรุณาค้นหาข้อมูลเกี่ยวกับสิ่งต่อไปนี้: "${query}"\n` +
+      `จากนั้นให้สรุปเนื้อหาเป็นภาษาไทยให้อ่านเข้าใจง่าย พร้อมทั้งระบุแหล่งที่มาหรือลิงก์อ้างอิงของข้อมูลด้วยครับ`;
 
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
@@ -65,10 +68,12 @@ async function handleSearchCommand(interaction) {
 async function handleMention(message, client) {
   try {
     // ลบส่วนที่แท็กชื่อบอทออก เพื่อเอาแค่ข้อความคำถาม
-    const text = message.content.replace(`<@${client.user.id}>`, '').trim();
-    
+    const text = message.content.replace(`<@${client.user.id}>`, "").trim();
+
     if (!text) {
-      await message.reply("มีอะไรให้ผมช่วยไหมครับ? สามารถพิมพ์ถามต่อท้ายมาได้เลยนะ!");
+      await message.reply(
+        "มีอะไรให้ผมช่วยไหมครับ? สามารถพิมพ์ถามต่อท้ายมาได้เลยนะ!",
+      );
       return;
     }
 
@@ -82,12 +87,14 @@ async function handleMention(message, client) {
     await message.reply(limitDiscordText(responseText));
   } catch (error) {
     console.error("AI Mention Error:", error);
-    await message.reply("❌ ตอนนี้ระบบ AI ขัดข้องนิดหน่อยครับ ลองทักมาใหม่นะครับ");
+    await message.reply(
+      "❌ ตอนนี้ระบบ AI ขัดข้องนิดหน่อยครับ ลองทักมาใหม่นะครับ",
+    );
   }
 }
 
 module.exports = {
   handleChatCommand,
   handleSearchCommand,
-  handleMention
+  handleMention,
 };

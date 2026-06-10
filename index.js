@@ -56,13 +56,13 @@ const { google } = require("googleapis");
 google.options({
   fetchImplementation: nodeFetch,
 });
-const client = new Client({ 
+const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates
-  ] 
+    GatewayIntentBits.GuildVoiceStates,
+  ],
 });
 
 const fs = require("fs");
@@ -78,7 +78,7 @@ if (fs.existsSync(credentialsPath)) {
 } else {
   authOptions.credentials = {
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
   };
 }
 
@@ -93,11 +93,12 @@ client.once("ready", async () => {
   try {
     console.log("[SYSTEM] Registering slash commands for all joined guilds...");
     for (const [guildId, guild] of client.guilds.cache) {
-      await rest.put(
-        Routes.applicationGuildCommands(client.user.id, guildId),
-        { body: commands }
+      await rest.put(Routes.applicationGuildCommands(client.user.id, guildId), {
+        body: commands,
+      });
+      console.log(
+        `[SYSTEM] Registered commands for guild: ${guild.name} (${guildId})`,
       );
-      console.log(`[SYSTEM] Registered commands for guild: ${guild.name} (${guildId})`);
     }
   } catch (error) {
     console.error("[SYSTEM] Error registering commands:", error);
@@ -107,13 +108,17 @@ client.once("ready", async () => {
 client.on("guildCreate", async (guild) => {
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
   try {
-    await rest.put(
-      Routes.applicationGuildCommands(client.user.id, guild.id),
-      { body: commands }
+    await rest.put(Routes.applicationGuildCommands(client.user.id, guild.id), {
+      body: commands,
+    });
+    console.log(
+      `[SYSTEM] Registered commands for new guild: ${guild.name} (${guild.id})`,
     );
-    console.log(`[SYSTEM] Registered commands for new guild: ${guild.name} (${guild.id})`);
   } catch (error) {
-    console.error(`[SYSTEM] Error registering commands for new guild: ${guild.name}`, error);
+    console.error(
+      `[SYSTEM] Error registering commands for new guild: ${guild.name}`,
+      error,
+    );
   }
 });
 
@@ -143,21 +148,26 @@ client.on("interactionCreate", async (interaction) => {
         .setTitle("🤖 คู่มือการใช้งานบอท")
         .setDescription("นี่คือรายการคำสั่งทั้งหมดที่คุณสามารถใช้งานได้ครับ")
         .addFields(
-          { 
-            name: "🎵 คำสั่งฟังเพลง (พิมพ์ปกติ)", 
-            value: "`!play <ชื่อเพลง/ลิงก์>` - ค้นหาและเล่นเพลงจาก YouTube\n`!volume <1-100>` - ปรับระดับเสียง\n`!list` - ดูรายชื่อเพลงที่อยู่ในคิว\n`!next` - ข้ามไปเล่นเพลงถัดไป\n`!stop` - หยุดเพลง ล้างคิว และเตะบอทออกจากห้อง" 
+          {
+            name: "🎵 คำสั่งฟังเพลง (พิมพ์ปกติ)",
+            value:
+              "`!play <ชื่อเพลง/ลิงก์>` - ค้นหาและเล่นเพลงจาก YouTube\n`!volume <1-100>` - ปรับระดับเสียง\n`!list` - ดูรายชื่อเพลงที่อยู่ในคิว\n`!next` - ข้ามไปเล่นเพลงถัดไป\n`!stop` - หยุดเพลง ล้างคิว และเตะบอทออกจากห้อง",
           },
-          { 
-            name: "📋 คำสั่งจัดการงาน (Slash Commands)", 
-            value: "`/assign` - มอบหมายงานและบันทึกลง Google Sheets\n`/task` - ดูงานที่ค้างอยู่ของคุณและส่งงาน\n`/summary` - ดูสรุปรายการงานทั้งหมดของคุณ" 
+          {
+            name: "📋 คำสั่งจัดการงาน (Slash Commands)",
+            value:
+              "`/assign` - มอบหมายงานและบันทึกลง Google Sheets\n`/task` - ดูงานที่ค้างอยู่ของคุณและส่งงาน\n`/summary` - ดูสรุปรายการงานทั้งหมดของคุณ",
           },
-          { 
-            name: "🧠 ระบบ AI Assistant", 
-            value: "`/chat <ข้อความ>` - พูดคุยทั่วไปกับ AI\n`/search <คำค้นหา>` - ให้ AI ค้นหาและสรุปข้อมูลจาก Google\n**พิมพ์ @Kirito-Bot** ตามด้วยคำถาม เพื่อคุยกับบอทได้ทันที" 
-          }
+          {
+            name: "🧠 ระบบ AI Assistant",
+            value:
+              "`/chat <ข้อความ>` - พูดคุยทั่วไปกับ AI\n`/search <คำค้นหา>` - ให้ AI ค้นหาและสรุปข้อมูลจาก Google\n**พิมพ์ @Kirito-Bot** ตามด้วยคำถาม เพื่อคุยกับบอทได้ทันที",
+          },
         )
-        .setFooter({ text: "ใช้งาน Slash Commands ได้โดยการพิมพ์ / ในช่องแชท" });
-      
+        .setFooter({
+          text: "ใช้งาน Slash Commands ได้โดยการพิมพ์ / ในช่องแชท",
+        });
+
       await interaction.reply({ embeds: [helpEmbed] });
     }
   }
@@ -202,7 +212,7 @@ rl.question(
         spreadsheetId: SPREADSHEET_ID,
         range: "Key!A:Z",
       });
-      
+
       const rows = response.data.values;
       if (!rows || rows.length === 0) {
         console.error("❌ ไม่พบข้อมูลในแผ่นงาน (Sheet) ชื่อ 'Key'");
@@ -211,15 +221,20 @@ rl.question(
 
       // หา index ของคอลัมน์ "key-access" ในแถวแรก (Header)
       const headers = rows[0];
-      const keyColumnIndex = headers.findIndex(header => header.trim() === "key-access");
-      
+      const keyColumnIndex = headers.findIndex(
+        (header) => header.trim() === "key-access",
+      );
+
       if (keyColumnIndex === -1) {
         console.error("❌ ไม่พบคอลัมน์ชื่อ 'key-access' ในแผ่นงาน 'Key'");
         process.exit(1);
       }
 
       // ดึงข้อมูลคีย์ทั้งหมดจากคอลัมน์นั้น (ไม่รวม header)
-      const validKeys = rows.slice(1).map(row => row[keyColumnIndex]).filter(key => key);
+      const validKeys = rows
+        .slice(1)
+        .map((row) => row[keyColumnIndex])
+        .filter((key) => key);
 
       if (validKeys.includes(answer)) {
         console.log(
@@ -231,7 +246,10 @@ rl.question(
         process.exit(1);
       }
     } catch (error) {
-      console.error("❌ เกิดข้อผิดพลาดในการดึงข้อมูลจาก Google Sheets:", error.message);
+      console.error(
+        "❌ เกิดข้อผิดพลาดในการดึงข้อมูลจาก Google Sheets:",
+        error.message,
+      );
       process.exit(1);
     }
     rl.close();
