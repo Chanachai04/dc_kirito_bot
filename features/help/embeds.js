@@ -20,9 +20,9 @@ function createHelpEmbed() {
           "`/assign` - มอบหมายงานและบันทึกลง Google Sheets\n`/task` - ดูงานที่ค้างอยู่ของคุณและส่งงาน\n`/summary` - ดูสรุปรายการงานทั้งหมดของคุณ",
       },
       {
-        name: "🧠 ระบบ AI Assistant",
+        name: "🧠 ระบบ AI Assistant (Slash Commands)",
         value:
-          "`!chat <ข้อความ>` - พูดคุยทั่วไปกับ AI\n`!search <คำค้นหา>` - ให้ AI ค้นหาและสรุปข้อมูลจาก Google\n`!image <คำอธิบายรูป>` - สร้างรูปภาพด้วย AI (FLUX.1 - ฟรี)\n**พิมพ์ @Kirito-Bot** ตามด้วยคำถาม เพื่อคุยกับบอทได้ทันที",
+          "`/chat <ข้อความ>` - พูดคุยทั่วไปกับ AI\n`/search <คำค้นหา>` - ให้ AI ค้นหาและสรุปข้อมูลจาก Google\n`/image <คำอธิบายรูป>` - สร้างรูปภาพด้วย AI",
       },
     )
     .setFooter({

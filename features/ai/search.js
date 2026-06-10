@@ -1,16 +1,11 @@
 const { generateWithFallback, limitDiscordText } = require("./utils");
 
 /**
- * จัดการคำสั่ง !search
+ * จัดการคำสั่ง /search
  */
-async function handleSearchCommand(message, args) {
-  if (args.length === 0)
-    return message.reply(
-      "⚠️ กรุณาระบุคำที่ต้องการค้นหาด้วยครับ (เช่น `!search สภาพอากาศวันนี้`)",
-    );
-
-  const query = args.join(" ");
-  const tempMsg = await message.reply("🔍 กำลังค้นหาข้อมูล...");
+async function handleSearchCommand(interaction) {
+  const query = interaction.options.getString("query");
+  await interaction.deferReply();
 
   try {
     const prompt =
@@ -20,15 +15,15 @@ async function handleSearchCommand(message, args) {
     const responseText = await generateWithFallback(prompt, true);
     const replyMessage = `**ค้นหา:** ${query}\n\n**ผลลัพธ์:** ${responseText}`;
 
-    await tempMsg.edit(limitDiscordText(replyMessage));
+    await interaction.editReply(limitDiscordText(replyMessage));
   } catch (error) {
     console.error("AI Search Error:", error);
     if (error.status === 503) {
-      await tempMsg.edit(
+      await interaction.editReply(
         "❌ เซิร์ฟเวอร์หลักของ Google กำลังมีคนใช้งานทั่วโลกพร้อมกันเป็นจำนวนมากเกินกว่าที่ระบบจะรับไหวในวินาทีนั้น",
       );
     } else {
-      await tempMsg.edit("❌ ขออภัย เกิดข้อผิดพลาดในการค้นหาข้อมูลครับ");
+      await interaction.editReply("❌ ขออภัย เกิดข้อผิดพลาดในการค้นหาข้อมูลครับ");
     }
   }
 }

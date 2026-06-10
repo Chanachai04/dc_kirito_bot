@@ -32,7 +32,33 @@ const commands = [
   new SlashCommandBuilder()
     .setName("help")
     .setDescription("เรียกดูคู่มือคำสั่งทั้งหมดของบอท"),
-
+  new SlashCommandBuilder()
+    .setName("chat")
+    .setDescription("พูดคุยทั่วไปกับ AI")
+    .addStringOption((option) =>
+      option
+        .setName("message")
+        .setDescription("ข้อความที่ต้องการคุยกับ AI")
+        .setRequired(true),
+    ),
+  new SlashCommandBuilder()
+    .setName("search")
+    .setDescription("ค้นหาและสรุปข้อมูลจาก Google ด้วย AI")
+    .addStringOption((option) =>
+      option
+        .setName("query")
+        .setDescription("คำที่ต้องการค้นหา")
+        .setRequired(true),
+    ),
+  new SlashCommandBuilder()
+    .setName("image")
+    .setDescription("สร้างรูปภาพด้วย AI")
+    .addStringOption((option) =>
+      option
+        .setName("prompt")
+        .setDescription("คำอธิบายรูปภาพที่ต้องการ")
+        .setRequired(true),
+    ),
 ].map((command) => command.toJSON());
 
 module.exports = commands;

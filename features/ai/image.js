@@ -2,29 +2,22 @@ const { generateWithFallback } = require("./utils");
 const fetch = require("node-fetch"); // fallback if needed, but index.js globally exposes fetch
 
 /**
- * จัดการคำสั่ง !image (สร้างรูปภาพด้วย Hugging Face)
+ * จัดการคำสั่ง /image (สร้างรูปภาพด้วย Hugging Face)
  */
-async function handleImageCommand(message, args) {
-  if (args.length === 0)
-    return message.reply(
-      "⚠️ กรุณาระบุคำอธิบายรูปภาพด้วยครับ (เช่น `!image แมวกำลังเดินเล่น`)",
-    );
-
-  const query = args.join(" ");
-  const tempMsg = await message.reply(
-    "🎨 กำลังใช้เวทมนตร์สร้างรูปภาพให้คุณ กรุณารอสักครู่...",
-  );
+async function handleImageCommand(interaction) {
+  const query = interaction.options.getString("prompt");
+  await interaction.deferReply();
 
   try {
     const hfToken = process.env.HF_TOKEN;
     if (!hfToken) {
-      return await tempMsg.edit(
+      return await interaction.editReply(
         "❌ ไม่พบรหัส `HF_TOKEN` ในไฟล์ `.env` ครับ\nกรุณาไปสมัครสมาชิกที่ https://huggingface.co/settings/tokens เพื่อรับ Token ฟรี แล้วนำมาใส่ในไฟล์ `.env` ครับ",
       );
     }
 
     // --- ส่วนของล่ามแปลภาษา (Gemini) ---
-    await tempMsg.edit("⏳ **กำลังร่ายมนต์คำสั่งให้สวยงาม...** (1/2)");
+    await interaction.editReply("⏳ **กำลังร่ายมนต์คำสั่งให้สวยงาม...** (1/2)");
     let finalPrompt = query;
     try {
       const translationPrompt = `You are an expert image generation prompt engineer.
@@ -39,12 +32,14 @@ ONLY return the final English prompt, with no intro, no outro, and no quotation 
         finalPrompt = aiResult.trim();
       }
     } catch (translateError) {
-      console.warn("Gemini translation failed, using original prompt:", translateError);
+      console.warn(
+        "Gemini translation failed, using original prompt:",
+        translateError,
+      );
     }
 
-    await tempMsg.edit(`⏳ **กำลังเสกรูปภาพ...** (2/2)`);
+    await interaction.editReply(`⏳ **กำลังเสกรูปภาพ...** (2/2)`);
 
-    // ใช้โมเดลฟรีคุณภาพสูงจาก Hugging Face (เช่น FLUX.1-schnell หรือ Stable Diffusion)
     const model = "black-forest-labs/FLUX.1-schnell";
     const url = `https://router.huggingface.co/hf-inference/models/${model}`;
 
@@ -71,18 +66,18 @@ ONLY return the final English prompt, with no intro, no outro, and no quotation 
     const { AttachmentBuilder } = require("discord.js");
     const attachment = new AttachmentBuilder(buffer, { name: "hf_image.jpg" });
 
-    await tempMsg.edit({
+    await interaction.editReply({
       content: `🖼️ **รูปภาพสำหรับ:** "${query}"`,
       files: [attachment],
     });
   } catch (error) {
     console.error("AI Image Error:", error);
     if (error.message === "Model is loading") {
-      await tempMsg.edit(
+      await interaction.editReply(
         "⏳ โมเดลกำลังเปิดเครื่อง (Cold Start) ในเซิร์ฟเวอร์ของ Hugging Face ครับ รบกวนรอสัก 1-2 นาทีแล้วลองพิมพ์คำสั่งใหม่อีกครั้งนะครับ",
       );
     } else {
-      await tempMsg.edit(
+      await interaction.editReply(
         "❌ ขออภัย เกิดข้อผิดพลาดในการสร้างรูปภาพครับ (เซิร์ฟเวอร์อาจจะโหลดช้าหรือมีปัญหา) กรุณาลองใหม่อีกครั้ง",
       );
     }

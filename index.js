@@ -141,6 +141,12 @@ client.on("interactionCreate", async (interaction) => {
     } else if (interaction.commandName === "help") {
       const helpFeature = require("./features/help");
       await helpFeature(interaction);
+    } else if (interaction.commandName === "chat") {
+      await aiFeature.handleChatCommand(interaction);
+    } else if (interaction.commandName === "search") {
+      await aiFeature.handleSearchCommand(interaction);
+    } else if (interaction.commandName === "image") {
+      await aiFeature.handleImageCommand(interaction);
     }
   } else if (interaction.isButton() || interaction.isModalSubmit()) {
     await handleMusicInteraction(interaction);
@@ -151,10 +157,7 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (!message.guild) return;
 
-  // ตรวจสอบว่ามีการ Mention หาบอทหรือไม่
-  if (message.mentions.has(client.user)) {
-    return await aiFeature.handleMention(message, client);
-  }
+
 
   const prefix = "!";
   if (!message.content.startsWith(prefix)) return;
@@ -164,12 +167,6 @@ client.on("messageCreate", async (message) => {
 
   if (["play", "stop", "next", "list", "volume"].includes(command)) {
     await handleMusicCommand(message, command, args);
-  } else if (command === "chat") {
-    await aiFeature.handleChatCommand(message, args);
-  } else if (command === "search") {
-    await aiFeature.handleSearchCommand(message, args);
-  } else if (command === "image") {
-    await aiFeature.handleImageCommand(message, args);
   }
 });
 
