@@ -39,25 +39,32 @@ async function musicFeature(message, command, args) {
     }
 
     const query = args.join(" ");
-    let songInfo;
+    let songInfos = [];
 
     try {
-      const isUrl = play.yt_validate(query) === "video";
-      if (isUrl) {
+      const type = play.yt_validate(query);
+      if (type === "video") {
         const info = await play.video_info(query);
-        songInfo = {
+        songInfos.push({
           title: info.video_details.title,
           url: info.video_details.url,
-        };
+        });
+      } else if (type === "playlist") {
+        const playlist = await play.playlist_info(query, { incomplete: true });
+        const videos = await playlist.all_videos();
+        // จำกัดสูงสุด 20 เพลง
+        const limitedVideos = videos.slice(0, 20);
+        songInfos = limitedVideos.map(v => ({ title: v.title, url: v.url }));
+        message.channel.send(`📥 ตรวจพบ Playlist! กำลังเพิ่ม **${songInfos.length} เพลง** ลงในคิว...`);
       } else {
         const searchResults = await play.search(query, { limit: 1 });
         if (!searchResults || searchResults.length === 0) {
           return message.reply("❌ ไม่พบเพลงที่ค้นหาครับ");
         }
-        songInfo = {
+        songInfos.push({
           title: searchResults[0].title,
           url: searchResults[0].url,
-        };
+        });
       }
     } catch (error) {
       console.error(error);
@@ -72,10 +79,12 @@ async function musicFeature(message, command, args) {
         player: createAudioPlayer(),
         songs: [],
         playing: true,
+        volume: 100,
+        resource: null,
       };
 
       queueMap.set(guildId, queueConstruct);
-      queueConstruct.songs.push(songInfo);
+      queueConstruct.songs.push(...songInfos);
 
       try {
         const connection = joinVoiceChannel({
@@ -110,8 +119,12 @@ async function musicFeature(message, command, args) {
         return message.reply("❌ ไม่สามารถเข้าร่วม Voice Channel ได้ครับ");
       }
     } else {
-      serverQueue.songs.push(songInfo);
-      return message.reply(`🎵 เพิ่ม **${songInfo.title}** ลงในคิวแล้วครับ!`);
+      serverQueue.songs.push(...songInfos);
+      if (songInfos.length === 1) {
+        return message.reply(`🎵 เพิ่ม **${songInfos[0].title}** ลงในคิวแล้วครับ!`);
+      } else {
+        return message.reply(`🎵 เพิ่ม **${songInfos.length} เพลง** ลงในคิวแล้วครับ!`);
+      }
     }
   } else if (command === "stop") {
     if (!serverQueue) {
@@ -142,6 +155,22 @@ async function musicFeature(message, command, args) {
       })
       .join("\n");
     return message.reply(`📋 **คิวเพลงปัจจุบัน:**\n${queueString}`);
+  } else if (command === "volume") {
+    if (!serverQueue) {
+      return message.reply("❌ ไม่มีเพลงที่กำลังเล่นอยู่ครับ");
+    }
+    if (args.length === 0) {
+      return message.reply(`🔊 ระดับเสียงปัจจุบันคือ **${serverQueue.volume}%**`);
+    }
+    const vol = parseInt(args[0]);
+    if (isNaN(vol) || vol < 1 || vol > 100) {
+      return message.reply("❌ กรุณาระบุระดับเสียงระหว่าง 1 - 100 ครับ");
+    }
+    serverQueue.volume = vol;
+    if (serverQueue.resource && serverQueue.resource.volume) {
+      serverQueue.resource.volume.setVolume(vol / 100);
+    }
+    return message.reply(`🔊 ปรับระดับเสียงเป็น **${vol}%** แล้วครับ`);
   }
 }
 
@@ -169,14 +198,18 @@ async function playNextSong(guildId) {
       
       ytdlp.on('error', (err) => console.error("yt-dlp spawn error:", err));
       
-      resource = createAudioResource(ytdlp.stdout);
+      resource = createAudioResource(ytdlp.stdout, { inlineVolume: true });
     } else {
       // กรณีไม่พบ yt-dlp.exe ให้ถอยกลับไปใช้ play-dl (อาจจะโดนบล็อค)
       const stream = await play.stream(song.url);
       resource = createAudioResource(stream.stream, {
         inputType: stream.type,
+        inlineVolume: true,
       });
     }
+
+    resource.volume.setVolume(serverQueue.volume / 100);
+    serverQueue.resource = resource;
 
     serverQueue.player.play(resource);
     serverQueue.textChannel.send(`🎶 กำลังเล่น: **${song.title}**`);

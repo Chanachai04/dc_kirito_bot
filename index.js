@@ -122,6 +122,7 @@ const assignFeature = require("./features/assign");
 const taskFeature = require("./features/task");
 const summaryFeature = require("./features/summary");
 const musicFeature = require("./features/music");
+const aiFeature = require("./features/ai");
 
 // ระบบจัดการ Interaction (Slash Commands & Buttons)
 client.on("interactionCreate", async (interaction) => {
@@ -132,6 +133,10 @@ client.on("interactionCreate", async (interaction) => {
       await taskFeature(interaction, sheets, SPREADSHEET_ID);
     } else if (interaction.commandName === "summary") {
       await summaryFeature(interaction, sheets, SPREADSHEET_ID);
+    } else if (interaction.commandName === "chat") {
+      await aiFeature.handleChatCommand(interaction);
+    } else if (interaction.commandName === "search") {
+      await aiFeature.handleSearchCommand(interaction);
     } else if (interaction.commandName === "help") {
       const helpEmbed = new EmbedBuilder()
         .setColor("#0099ff")
@@ -140,11 +145,15 @@ client.on("interactionCreate", async (interaction) => {
         .addFields(
           { 
             name: "🎵 คำสั่งฟังเพลง (พิมพ์ปกติ)", 
-            value: "`!play <ชื่อเพลง/ลิงก์>` - ค้นหาและเล่นเพลงจาก YouTube\n`!list` - ดูรายชื่อเพลงที่อยู่ในคิว\n`!next` - ข้ามไปเล่นเพลงถัดไปในคิว\n`!stop` - หยุดเพลง ล้างคิว และเตะบอทออกจากห้อง" 
+            value: "`!play <ชื่อเพลง/ลิงก์>` - ค้นหาและเล่นเพลงจาก YouTube\n`!volume <1-100>` - ปรับระดับเสียง\n`!list` - ดูรายชื่อเพลงที่อยู่ในคิว\n`!next` - ข้ามไปเล่นเพลงถัดไป\n`!stop` - หยุดเพลง ล้างคิว และเตะบอทออกจากห้อง" 
           },
           { 
             name: "📋 คำสั่งจัดการงาน (Slash Commands)", 
-            value: "`/assign` - มอบหมายงานให้สมาชิกและบันทึกลง Google Sheets\n`/task` - ดูงานที่ค้างอยู่ของคุณและอัปเดตสถานะเป็นเสร็จสิ้น\n`/summary` - ดูสรุปรายการงานทั้งหมดของคุณ\n`/help` - เรียกดูคู่มือคำสั่งทั้งหมดของบอท" 
+            value: "`/assign` - มอบหมายงานและบันทึกลง Google Sheets\n`/task` - ดูงานที่ค้างอยู่ของคุณและส่งงาน\n`/summary` - ดูสรุปรายการงานทั้งหมดของคุณ" 
+          },
+          { 
+            name: "🧠 ระบบ AI Assistant", 
+            value: "`/chat <ข้อความ>` - พูดคุยทั่วไปกับ AI\n`/search <คำค้นหา>` - ให้ AI ค้นหาและสรุปข้อมูลจาก Google\n**พิมพ์ @Kirito-Bot** ตามด้วยคำถาม เพื่อคุยกับบอทได้ทันที" 
           }
         )
         .setFooter({ text: "ใช้งาน Slash Commands ได้โดยการพิมพ์ / ในช่องแชท" });
@@ -158,13 +167,18 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (!message.guild) return;
 
+  // ตรวจสอบว่ามีการ Mention หาบอทหรือไม่
+  if (message.mentions.has(client.user)) {
+    return await aiFeature.handleMention(message, client);
+  }
+
   const prefix = "!";
   if (!message.content.startsWith(prefix)) return;
 
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
 
-  if (["play", "stop", "next", "list"].includes(command)) {
+  if (["play", "stop", "next", "list", "volume"].includes(command)) {
     await musicFeature(message, command, args);
   }
 });
