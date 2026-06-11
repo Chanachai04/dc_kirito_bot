@@ -17,6 +17,7 @@ async function handleImageCommand(interaction) {
     }
 
     // --- ส่วนของล่ามแปลภาษา (Gemini) ---
+    console.log("[/image] Updating to 1/2...");
     await interaction.editReply("⏳ **กำลังร่ายมนต์คำสั่งให้สวยงาม...** (1/2)");
     let finalPrompt = query;
     try {
@@ -26,8 +27,9 @@ Translate this into a highly descriptive English prompt optimized for AI image g
 Include details like lighting, art style, camera angle, and quality tags if appropriate.
 ONLY return the final English prompt, with no intro, no outro, and no quotation marks.`;
 
-      // ใช้ generateWithFallback ซึ่งรองรับ gemini-2.5-flash -> gemini-2.5-flash-lite อยู่แล้ว
+      console.log("[/image] Calling Gemini API...");
       const aiResult = await generateWithFallback(translationPrompt, false);
+      console.log("[/image] Gemini returned:", aiResult);
       if (aiResult && aiResult.trim()) {
         finalPrompt = aiResult.trim();
       }
@@ -38,19 +40,32 @@ ONLY return the final English prompt, with no intro, no outro, and no quotation 
       );
     }
 
+    console.log("[/image] Updating to 2/2...");
     await interaction.editReply(`⏳ **กำลังเสกรูปภาพ...** (2/2)`);
 
     const model = "black-forest-labs/FLUX.1-schnell";
     const url = `https://router.huggingface.co/hf-inference/models/${model}`;
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${hfToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ inputs: finalPrompt }),
-    });
+    console.log("[/image] Calling Hugging Face API...");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+    let response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${hfToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ inputs: finalPrompt }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+    } catch (fetchError) {
+      clearTimeout(timeout);
+      throw new Error(fetchError.name === 'AbortError' ? "Hugging Face Timeout" : "Hugging Face API Error");
+    }
+    console.log("[/image] Hugging Face responded with status:", response.status);
 
     if (!response.ok) {
       if (response.status === 503) {

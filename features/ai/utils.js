@@ -35,7 +35,7 @@ async function generateWithFallback(prompt, useSearch = false) {
     if (useSearch) {
       options.tools = [{ googleSearch: {} }];
     }
-    const model = genAI.getGenerativeModel(options);
+    const model = genAI.getGenerativeModel(options, { timeout: 20000 });
     const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (error) {

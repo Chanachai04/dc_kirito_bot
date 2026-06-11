@@ -1,3 +1,26 @@
+// --- POLYFILL BUFFER BEFORE ANYTHING ELSE ---
+const buf = require("buffer");
+if (typeof buf.Blob !== "function") {
+  try {
+    const fetchBlob = require("fetch-blob");
+    buf.Blob = typeof fetchBlob === "function" ? fetchBlob : fetchBlob.default;
+  } catch (e) {}
+}
+if (typeof buf.File !== "function") {
+  class File extends (typeof buf.Blob === "function" ? buf.Blob : Object) {
+    constructor(fileBits, fileName, options) {
+      if (typeof buf.Blob === "function") super(fileBits, options);
+      else super();
+      this.name = fileName;
+      this.lastModified = options?.lastModified || Date.now();
+    }
+  }
+  buf.File = File;
+}
+if (!global.Blob && buf.Blob) global.Blob = buf.Blob;
+if (!global.File && buf.File) global.File = buf.File;
+// ------------------------------------------
+
 // บังคับให้ใช้ ffmpeg.exe จากโฟลเดอร์ปัจจุบันเสมอ (แก้ปัญหาหาไฟล์ไม่เจอตอนแพ็กเป็น .exe)
 process.env.FFMPEG_PATH = require("path").join(process.cwd(), "ffmpeg.exe");
 
@@ -21,15 +44,8 @@ if (typeof global.DOMException === "undefined") {
     }
   };
 }
-if (typeof global.Blob === "undefined") {
-  try {
-    global.Blob = require("fetch-blob");
-  } catch (e) {
-    try {
-      global.Blob = require("buffer").Blob;
-    } catch (e) {}
-  }
-}
+
+
 
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
